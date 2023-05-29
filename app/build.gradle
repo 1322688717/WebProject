@@ -3,6 +3,16 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
+
+    signingConfigs {
+        release {
+            keyAlias 'key0'
+            keyPassword '123456'
+            storeFile file('D:/zcq/project/WebProject/zcq.keystore')
+            storePassword '123456'
+        }
+    }
+
     defaultConfig {
         applicationId "com.yxml8888.yxml9999"
         minSdkVersion 21

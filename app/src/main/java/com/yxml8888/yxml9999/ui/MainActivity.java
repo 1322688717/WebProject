@@ -29,6 +29,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -71,6 +72,8 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
     private String mWebViewUrl;
     private String mFloatUrl;
     private String mJson;
+
+    private TextView tv_error_json;
     private NTSkipView mTvSkip;
     private FrameLayout fullVideo;
     private View customView;
@@ -243,6 +246,7 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         mTvSkip = findViewById(R.id.tv_skip);
         fullVideo = findViewById(R.id.full_video);
         mProgress = findViewById(R.id.progressbar_view);
+        tv_error_json = findViewById(R.id.tv_error_json);
     }
 
     /**
@@ -263,6 +267,7 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
                             bValue = kv.decodeBool("bool");
                             //skipLocalBrowser(mFloatUrl);
                             loadUrl(mFloatUrl);
+                            mLayoutError.setVisibility(View.GONE);
                             floatingButton.setBackgroundResource(R.mipmap.back);
                         }else {
                             kv.encode("bool", true);
@@ -413,6 +418,8 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                tv_error_json.setText(mJson);
+                mBtnReload.setText("配置错误，请重试");
                 mLayoutError.setVisibility(View.VISIBLE);
                 mBtnReload.setOnClickListener(new View.OnClickListener() {
                     @Override
