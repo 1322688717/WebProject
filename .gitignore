@@ -1,16 +1,19 @@
-
+*.iml
 *.classpath
 *.project
 .gradle
 /local.properties
 /.idea
-
+.DS_Store
 /build
 /release
 .externalNativeBuild
-/.gradle
-/app/build
-/app/release
+adroiddataclean/build/
+cacheclean/build/
+databaseclean/build/
+memoryscan/build/
+utils/build/
+
 # Built application files
 *.apk
 *.ap_
@@ -46,10 +49,11 @@ proguard/
 captures/
 
 # IntelliJ IDEA files
-*.iml
+
 *.ipr
 *.iws
 .idea/
 
 # Mac files
-.DS_Store
+
+
