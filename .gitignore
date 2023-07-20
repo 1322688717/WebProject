@@ -8,3 +8,6 @@
 /build
 /release
 .externalNativeBuild
+/.gradle
+/app/build
+/app/release
