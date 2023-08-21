@@ -53,7 +53,17 @@ captures/
 *.ipr
 *.iws
 .idea/
+.idea/*.xml
 
 # Mac files
 
 
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/buildOutputCleanup/cache.properties
+.idea/libraries/Gradle__androidx_activity_activity_1_0_0_aar.xml
+.idea/libraries/Gradle__androidx_cardview_cardview_1_0_0_aar.xml
+.idea/libraries/Gradle__androidx_lifecycle_lifecycle_livedata_2_0_0_aar.xml
+.idea/libraries/Gradle__com_github_youlookwhat_WebProgress_1_2_0_aar.xml
+.idea/libraries/Gradle__com_scwang_smart_refresh_drawable_paint_2_0_1_aar.xml
+local.properties
