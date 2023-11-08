@@ -1,5 +1,7 @@
 package com.yxml8888.yxml9999.ui;
 
+import static com.yxml8888.yxml9999.utils.FileUtil.deleteRecursive;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,7 +29,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +47,7 @@ import com.yxml8888.yxml9999.view.PrivacyProtocolDialog;
 
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
@@ -95,6 +97,7 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        deleteRecursive(this);
         MMKV.initialize(this);
         //  修改状态栏颜色
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -313,6 +316,7 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
                 if (curTime - mLastClickBackTime > 2000) {
                     mLastClickBackTime = curTime;
                     Toast.makeText(this, "再次点击退出", Toast.LENGTH_SHORT).show();
+//                    deleteRecursive(this);
                     return true;
                 }
                 finish();
@@ -321,6 +325,22 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
             return true;
         } else {
             return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    // 递归删除目录内的非SharedPreferences文件的自定义函数
+    public void deleteNonSharedPreferencesFiles(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && !file.getName().endsWith(".xml")) {
+                    // 删除非SharedPreferences文件
+                    file.delete();
+                } else if (file.isDirectory()) {
+                    // 递归进入子目录
+                    deleteNonSharedPreferencesFiles(file);
+                }
+            }
         }
     }
 

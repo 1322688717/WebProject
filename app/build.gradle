@@ -26,6 +26,12 @@ android {
         }
     }
 
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            // 自定义 APK 文件名
+            output.outputFileName = "WebProject${variant.versionName}.apk"
+        }
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
