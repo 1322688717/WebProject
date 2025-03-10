@@ -117,17 +117,14 @@ public class PrivacyProtocolDialog extends Dialog implements View.OnClickListene
     }
 
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.disagree_tv:
-                mResponseCallBack.disAgree();
-                dismiss();
-                break;
-            case R.id.agree_tv:
-                mResponseCallBack.agree();
-                dismiss();
-                break;
+        if (view.getId() == R.id.disagree_tv) {
+            mResponseCallBack.disAgree();
+        } else if (view.getId() == R.id.agree_tv) {
+            mResponseCallBack.agree();
         }
+        dismiss();
     }
+
 
     @Override
     public void onBackPressed() {
