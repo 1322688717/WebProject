@@ -388,7 +388,7 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
             // 设置WebView运行中的一个文件方案被允许访问其他文件方案中的内容，默认值true
             settings.setAllowFileAccessFromFileURLs(true);
             // 设置Application缓存API是否开启，默认false，设置有效的缓存路径参考setAppCachePath(String path)方法
-            settings.setAppCacheEnabled(false);
+//            settings.setAppCacheEnabled(false);
             // 设置是否开启数据库存储API权限，默认false，未开启，可以参考setDatabasePath(String path)
             settings.setDatabaseEnabled(true);
             // 设置是否开启DOM存储API权限，默认false，未开启，设置为true，WebView能够使用DOM
