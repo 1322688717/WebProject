@@ -1,5 +1,6 @@
 package com.yxml8888.yxml9999.ui;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -18,24 +19,19 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yxml8888.yxml9999.R;
 
+import java.util.Objects;
+
 public class CustomWebActivity extends AppCompatActivity {
 
     private TextView tvAdTitle;
-    private ImageView ivAdBack;
-    private ProgressBar progressBar;
     private WebView webView;
-    private TextView tvAdReload;
 
-
-    private String url;
-    private String title = "内容详情";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +40,11 @@ public class CustomWebActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(getResources().getColor(R.color.white));
+            window.setStatusBarColor(getResources().getColor(R.color.white, null));
             View decorView = window.getDecorView();
-            if (decorView != null) {
-                int vis = decorView.getSystemUiVisibility();
-                vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-                decorView.setSystemUiVisibility(vis);
-            }
+            int vis = decorView.getSystemUiVisibility();
+            vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            decorView.setSystemUiVisibility(vis);
         }
         initViews();
         initData();
@@ -61,27 +55,17 @@ public class CustomWebActivity extends AppCompatActivity {
      */
     private void initViews() {
         tvAdTitle = findViewById(R.id.tv_ad_title);
-        ivAdBack = findViewById(R.id.iv_ad_back);
-        progressBar = findViewById(R.id.pb_ad);
+        ImageView ivAdBack = findViewById(R.id.iv_ad_back);
         webView = findViewById(R.id.wb_ad);
-        tvAdReload = findViewById(R.id.tv_ad_reload);
+        TextView tvAdReload = findViewById(R.id.tv_ad_reload);
 
-        ivAdBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        ivAdBack.setOnClickListener(v -> finish());
 
-        tvAdReload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                webView.reload();
-            }
-        });
+        tvAdReload.setOnClickListener(v -> webView.reload());
         initWebView(webView);
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void initWebView(WebView webView) {
         WebSettings settings = webView.getSettings();
         settings.setAllowFileAccess(true);
@@ -124,13 +108,15 @@ public class CustomWebActivity extends AppCompatActivity {
      */
     private void initData() {
         // 获取传来的url
+        String url;
         try {
-            url = getIntent().getExtras().getString("url");
+            url = Objects.requireNonNull(getIntent().getExtras()).getString("url");
         } catch (Exception e) {
-            onBackPressed();
+            getOnBackPressedDispatcher();
             return;
         }
         // 获取传来的title
+        String title;
         try {
             title = getIntent().getExtras().getString("title");
         } catch (Exception e) {
@@ -139,6 +125,7 @@ public class CustomWebActivity extends AppCompatActivity {
         // 设置title
         tvAdTitle.setText(title);
         // 加载网页
+        assert url != null;
         webView.loadUrl(url);
     }
 
@@ -165,7 +152,6 @@ public class CustomWebActivity extends AppCompatActivity {
 
     public class MyWebViewClient extends WebViewClient {
         String currentUrl;
-        boolean isInit = false;
 
         @Override
         public boolean shouldOverrideUrlLoading(android.webkit.WebView webView, String str) {
@@ -178,11 +164,12 @@ public class CustomWebActivity extends AppCompatActivity {
                 parseUri.addCategory("android.intent.category.BROWSABLE");
                 parseUri.setComponent(null);
                 CustomWebActivity.this.startActivity(parseUri);
-            } catch (Exception unused) {
+            } catch (Exception ignored) {
             }
             return true;
         }
 
+        @SuppressLint("WebViewClientOnReceivedSslError")
         @Override
         public void onReceivedSslError(android.webkit.WebView webView, SslErrorHandler sslErrorHandler, SslError sslError) {
             Log.e("WebView", "onReceivedSslError");
@@ -212,15 +199,9 @@ public class CustomWebActivity extends AppCompatActivity {
     class MyWebChromeClient extends WebChromeClient {
 
         @Override
-        public void onProgressChanged(android.webkit.WebView webView, int i) {
-
-
-        }
-
-        @Override
         public void onReceivedTitle(android.webkit.WebView webView, String str) {
             super.onReceivedTitle(webView, str);
-            if (str != null && !webView.getUrl().contains(str)) {
+            if (str != null && !Objects.requireNonNull(webView.getUrl()).contains(str)) {
                 tvAdTitle.setText(str);
             }
         }
