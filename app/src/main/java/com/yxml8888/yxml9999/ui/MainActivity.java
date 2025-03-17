@@ -14,13 +14,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.webkit.ConsoleMessage;
-import android.webkit.DownloadListener;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -37,19 +37,15 @@ import androidx.annotation.NonNull;
 
 import com.tencent.mmkv.MMKV;
 import com.yxml8888.yxml9999.R;
-
 import com.yxml8888.yxml9999.encrypt.OneAesUtil;
 import com.yxml8888.yxml9999.utils.SharePerfenceUtils;
-import com.yxml8888.yxml9999.view.ByFullscreenHolder;
 import com.yxml8888.yxml9999.view.DragFloatActionButton;
 import com.yxml8888.yxml9999.view.NTSkipView;
 import com.yxml8888.yxml9999.view.PrivacyProtocolDialog;
 
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 
 import me.jingbin.progress.WebProgress;
 import okhttp3.Call;
@@ -79,19 +75,12 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
     private NTSkipView mTvSkip;
     private FrameLayout fullVideo;
     private View customView;
-    private ByFullscreenHolder videoFullView;
-    private WebChromeClient.CustomViewCallback mCustomViewCallback;
-    private WeakReference<Activity> mActivityWeakReference = null;
-    // 修复可能部分h5无故横屏问题
-    private boolean isFixScreenLandscape = false;
-    // 修复可能部分h5无故竖屏问题
-    private boolean isFixScreenPortrait = false;
-
     private ValueCallback<Uri> uploadFile;
     private ValueCallback<Uri[]> uploadFiles;
 
     private WebProgress mProgress;
     private boolean bValue = true;
+    private final static String TAG = "MainActivity";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -103,13 +92,11 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Window window = getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(getResources().getColor(R.color.white));
+            window.setStatusBarColor(getResources().getColor(R.color.white, null));
             View decorView = window.getDecorView();
-            if (decorView != null) {
-                int vis = decorView.getSystemUiVisibility();
-                vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-                decorView.setSystemUiVisibility(vis);
-            }
+            int vis = decorView.getSystemUiVisibility();
+            vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            decorView.setSystemUiVisibility(vis);
         }
         //  初始化view
         initViews();
@@ -124,16 +111,14 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         if (!TextUtils.isEmpty(switchHasBackground) && switchHasBackground.equals("true")) {
             mLayoutMain.setBackgroundResource(R.mipmap.screen);
             mLayoutPrivacy.setVisibility(View.GONE);
-            mWebView.setVisibility(View.GONE);
-            mProgress.setVisibility(View.GONE);
         } else {
             mLayoutMain.setBackgroundResource(R.color.white);
             mLayoutPrivacy.setVisibility(View.VISIBLE);
-            mWebView.setVisibility(View.GONE);
-            mProgress.setVisibility(View.GONE);
         }
+        mWebView.setVisibility(View.GONE);
+        mProgress.setVisibility(View.GONE);
         String showPrivacy = getResources().getString(R.string.showPrivacy);
-        if (isFirst &&  !TextUtils.isEmpty(showPrivacy) && showPrivacy.equals("true")) {
+        if (isFirst && !TextUtils.isEmpty(showPrivacy) && showPrivacy.equals("true")) {
             mTvSkip.setVisibility(View.GONE);
             new PrivacyProtocolDialog(this, R.style.protocolDialogStyle, this).show();
         } else {
@@ -145,15 +130,29 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         mProgress.show(); // 显示
         mProgress.setWebProgress(50);              // 设置进度
         mProgress.setColor("#D81B60");             // 设置颜色
-        mProgress.setColor("#00D81B60","#D81B60"); // 设置渐变色
+        mProgress.setColor("#00D81B60", "#D81B60"); // 设置渐变色
         mProgress.hide(); // 隐藏
     }
 
-    private void showSkip(){
+    private void showSkip() {
         initData();
         mTvSkip.setVisibility(View.VISIBLE);
         initWebView();
+        CountDownTimer countDownTimer = getCountDownTimer();
+        mTvSkip.setOnClickListener(v -> {
+            countDownTimer.cancel();
+            mTvSkip.setVisibility(View.GONE);
+            mLayoutMain.setBackgroundResource(R.color.default_bg);
+            mLayoutPrivacy.setVisibility(View.GONE);
+            mWebView.setAnimation(new AlphaAnimation(0, 10));
+            mWebView.setVisibility(View.VISIBLE);
+            initFloating();
+        });
+    }
+
+    private @NonNull CountDownTimer getCountDownTimer() {
         CountDownTimer countDownTimer = new CountDownTimer(3000, 1000) {
+            @SuppressLint("DefaultLocale")
             @Override
             public void onTick(long millisUntilFinished) {
                 mTvSkip.setText(String.format("跳过 %d", Math.round(millisUntilFinished / 1000f)));
@@ -170,21 +169,9 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
             }
         };
         countDownTimer.start();
-        mTvSkip.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (countDownTimer != null) {
-                    countDownTimer.cancel();
-                }
-                mTvSkip.setVisibility(View.GONE);
-                mLayoutMain.setBackgroundResource(R.color.default_bg);
-                mLayoutPrivacy.setVisibility(View.GONE);
-                mWebView.setAnimation(new AlphaAnimation(0, 10));
-                mWebView.setVisibility(View.VISIBLE);
-                initFloating();
-            }
-        });
+        return countDownTimer;
     }
+
     private void initData() {
         String getIpConfig = getResources().getString(R.string.getIpConfig);
         String urlMain = getResources().getString(R.string.url_main);
@@ -208,8 +195,9 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
                 }
 
                 @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
                     try {
+                        assert response.body() != null;
                         String json = response.body().string();
                         JSONObject jsonObject = new JSONObject(json);
                         mWebViewUrl = jsonObject.getString("query");
@@ -260,39 +248,25 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         String showFloatButton = getResources().getString(R.string.showFloatButton);
         if (!TextUtils.isEmpty(showFloatButton) && showFloatButton.equals("true")) {
             floatingButton.setVisibility(View.VISIBLE);
-            floatingButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (!TextUtils.isEmpty(mFloatUrl)) {
-                       // skipLocalBrowser(mFloatUrl);
-                        if (bValue){
-                            kv.encode("bool", false);
-                            bValue = kv.decodeBool("bool");
-                            //skipLocalBrowser(mFloatUrl);
-                            loadUrl(mFloatUrl);
-                            mLayoutError.setVisibility(View.GONE);
-                            floatingButton.setBackgroundResource(R.mipmap.back);
-                        }else {
-                            kv.encode("bool", true);
-                            bValue = kv.decodeBool("bool");
-                            initData();
-                            floatingButton.setBackgroundResource(R.mipmap.icon_float);
-                        }
+            floatingButton.setOnClickListener(view -> {
+                if (!TextUtils.isEmpty(mFloatUrl)) {
+                    // skipLocalBrowser(mFloatUrl);
+                    if (bValue) {
+                        kv.encode("bool", false);
+                        bValue = kv.decodeBool("bool");
+                        //skipLocalBrowser(mFloatUrl);
+                        loadUrl(mFloatUrl);
+                        mLayoutError.setVisibility(View.GONE);
+                        floatingButton.setBackgroundResource(R.mipmap.back);
+                    } else {
+                        kv.encode("bool", true);
+                        bValue = kv.decodeBool("bool");
+                        initData();
+                        floatingButton.setBackgroundResource(R.mipmap.icon_float);
                     }
                 }
             });
         }
-    }
-
-    /**
-     * 跳转到浏览器
-     */
-    public void skipLocalBrowser(String url) {
-        Intent intent = new Intent();
-        intent.setAction("android.intent.action.VIEW");
-        Uri content_url = Uri.parse(url);
-        intent.setData(content_url);
-        MainActivity.this.startActivity(intent);
     }
 
     @Override
@@ -300,23 +274,12 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (null != mWebView && mWebView.canGoBack()) {
                 mWebView.goBack();
-//                final MMKV kv = MMKV.defaultMMKV();
-//                if (bValue){
-//                    kv.encode("bool", false);
-//                    bValue = kv.decodeBool("bool");
-//                    floatingButton.setBackgroundResource(R.mipmap.back);
-//                }else {
-//                    kv.encode("bool", true);
-//                    bValue = kv.decodeBool("bool");
-//                    floatingButton.setBackgroundResource(R.mipmap.icon_float);
-//                }
                 return false;
             } else {
                 long curTime = System.currentTimeMillis();
                 if (curTime - mLastClickBackTime > 2000) {
                     mLastClickBackTime = curTime;
                     Toast.makeText(this, "再次点击退出", Toast.LENGTH_SHORT).show();
-//                    deleteRecursive(this);
                     return true;
                 }
                 finish();
@@ -328,21 +291,6 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         }
     }
 
-    // 递归删除目录内的非SharedPreferences文件的自定义函数
-    public void deleteNonSharedPreferencesFiles(File directory) {
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile() && !file.getName().endsWith(".xml")) {
-                    // 删除非SharedPreferences文件
-                    file.delete();
-                } else if (file.isDirectory()) {
-                    // 递归进入子目录
-                    deleteNonSharedPreferencesFiles(file);
-                }
-            }
-        }
-    }
 
     @Override
     public void agree() {
@@ -407,24 +355,16 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
             settings.setDefaultTextEncodingName("UTF-8");
             mWebView.setWebViewClient(new MyWebViewClient());
             mWebView.setWebChromeClient(new MyWebChromeClient());
-            mWebView.setDownloadListener(new DownloadListener() {
-                @Override
-                public void onDownloadStart(String str, String str2, String str3, String str4, long j) {
-                    startActivity(new Intent("android.intent.action.VIEW", Uri.parse(str)));
-                }
-            });
+            mWebView.setDownloadListener((str, str2, str3, str4, j) -> startActivity(new Intent("android.intent.action.VIEW", Uri.parse(str))));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error occurred in onCreate", e);
         }
     }
 
     private void loadUrl(String webUrl) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mWebView.loadUrl(webUrl);
-                mProgress.show();
-            }
+        runOnUiThread(() -> {
+            mWebView.loadUrl(webUrl);
+            mProgress.show();
         });
     }
 
@@ -435,20 +375,14 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         if (null == mLayoutError || null == mBtnReload) {
             return;
         }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                tv_error_json.setText(mJson);
-                mBtnReload.setText("配置错误，请重试");
-                mLayoutError.setVisibility(View.VISIBLE);
-                mBtnReload.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        startActivity(new Intent(MainActivity.this, MainActivity.class));
-                        finish();
-                    }
-                });
-            }
+        runOnUiThread(() -> {
+            tv_error_json.setText(mJson);
+            mBtnReload.setText("配置错误，请重试");
+            mLayoutError.setVisibility(View.VISIBLE);
+            mBtnReload.setOnClickListener(view -> {
+                startActivity(new Intent(MainActivity.this, MainActivity.class));
+                finish();
+            });
         });
     }
 
@@ -467,11 +401,12 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
                 parseUri.addCategory("android.intent.category.BROWSABLE");
                 parseUri.setComponent(null);
                 startActivity(parseUri);
-            } catch (Exception unused) {
+            } catch (Exception ignored) {
             }
             return true;
         }
 
+        @SuppressLint("WebViewClientOnReceivedSslError")
         @Override
         public void onReceivedSslError(WebView webView, SslErrorHandler sslErrorHandler, SslError sslError) {
             sslErrorHandler.proceed();
@@ -502,13 +437,13 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         @Override
         public void onHideCustomView() {
             //退出全屏
-            if (customView == null){
+            if (customView == null) {
                 return;
             }
             //移除全屏视图并隐藏
             fullVideo.removeView(customView);
             fullVideo.setVisibility(View.GONE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);//设置竖屏
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);//设置竖屏
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);//清除全屏
 
         }
@@ -562,11 +497,11 @@ public class MainActivity extends Activity implements PrivacyProtocolDialog.Resp
         if (i2 == -1) {
             if (i == 0) {
                 if (uploadFile != null) {
-                    uploadFile.onReceiveValue((intent == null || i2 != -1) ? null : intent.getData());
+                    uploadFile.onReceiveValue(intent == null ? null : intent.getData());
                     uploadFile = null;
                 }
                 if (uploadFiles != null) {
-                    uploadFiles.onReceiveValue(new Uri[]{(intent == null || i2 != -1) ? null : intent.getData()});
+                    uploadFiles.onReceiveValue(new Uri[]{intent == null ? null : intent.getData()});
                     uploadFiles = null;
                 }
             }
