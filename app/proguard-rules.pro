@@ -126,3 +126,36 @@ public <init>(android.content.Context, android.util.AttributeSet, int);
 
 # 如果有特定的类需要保留，可以在这里添加
 -keep class com.yourpackage.** { *; }
+
+# 保持 native 方法不被混淆
+-keepclasseswithmembers class * {
+    native <methods>;
+}
+
+# 保持 `libnrb.so` 相关类不被混淆
+-keep class org.chickenhook.restrictionbypass.** { *; }
+-keep class o0.a.** { *; }
+
+# 避免 Native 方法优化导致的问题
+-keepnames class * {
+    native <methods>;
+}
+
+# 保留所有 JNI 相关的类和方法
+-keep class * {
+    public native *;
+}
+
+# 避免删除 JNI 相关字段
+-keepclassmembers class * {
+    @android.annotation.Keep *;
+}
+
+# 避免 ProGuard 误删 JNI 相关方法
+-keep class **.NativeReflectionBypass { *; }
+-keep class **.BypassProvider { *; }
+
+# 防止某些 Java 反射调用被优化掉
+-keepattributes *Annotation*
+-keep class * extends java.lang.reflect.Method { *; }
+-keep class * extends java.lang.reflect.Field { *; }
